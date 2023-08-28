@@ -172,8 +172,7 @@ class Encoder {
     }
 
     update(residual, reconstructed) {
-        let sample = this.samples[this.idx];
-        sample = sample > 0 ? sample * 127 : sample * 128;
+        const sample = this.samples[this.idx] * 128;
         const weights = this.weights;
         const history = this.history;
         const delta = residual >> this.update_shift;

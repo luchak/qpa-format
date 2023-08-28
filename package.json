@@ -27,6 +27,7 @@
     "homepage": "https://github.com/luchak/qpa-format#readme",
     "dependencies": {
         "@thi.ng/bitstream": "^2.2.28",
+        "audio-buffer": "^5.0.0",
         "audio-decode": "^2.1.4",
         "audiobuffer-to-wav": "^1.0.0",
         "minimist": "^1.2.8",

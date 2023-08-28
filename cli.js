@@ -1,11 +1,13 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
-import minimist from 'minimist';
 
+import AudioBuffer from 'audio-buffer';
 import decodeAudio from 'audio-decode';
-import { encode, decode, QPA_CONFIGS } from './qpa.js';
 import encodeWAV from 'audiobuffer-to-wav';
+import minimist from 'minimist';
 import waveResampler from 'wave-resampler';
+
+import { encode, decode, QPA_CONFIGS } from './qpa.js';
 
 const QPA_SR = 5512;
 const WAV_SR = 22050;
@@ -23,14 +25,9 @@ const quality = argv.q ?? 2;
 run(input, output);
 
 function arrayToMonoAudioBuffer(array, sampleRate) {
-    return {
-        _channelData: [array],
-        numberOfChannels: 1,
-        sampleRate,
-        getChannelData: function (channel) {
-            return this._channelData[channel];
-        },
-    };
+    const buffer = new AudioBuffer({ length: array.length, sampleRate });
+    buffer.copyToChannel(array, 0);
+    return buffer;
 }
 
 async function run(input, output) {
