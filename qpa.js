@@ -94,8 +94,19 @@ function expand_dequant_tab(raw_dequant_tab, scalefactor_tab) {
     });
 }
 
-function qoa_clamp(v, min, max) {
+function qpa_clamp(v, min, max) {
     return v < min ? min : v > max ? max : v;
+}
+
+function swap_ends(inbuf) {
+    const outbuf = new Uint8Array(inbuf.length);
+    for (let i = 0; i < inbuf.length; i += 4) {
+        outbuf[i+0] = inbuf[i+3];
+        outbuf[i+1] = inbuf[i+2];
+        outbuf[i+2] = inbuf[i+1];
+        outbuf[i+3] = inbuf[i+0];
+    }
+    return outbuf;
 }
 
 class Encoder {
@@ -208,7 +219,7 @@ export function encode(data, config, err_cb) {
       sample_index < num_samples;
       sample_index += config.slice_len
     ) {
-        const slice_len = qoa_clamp(config.slice_len, 0, num_samples - sample_index);
+        const slice_len = qpa_clamp(config.slice_len, 0, num_samples - sample_index);
         let best_sf_error = Infinity;
         let best_sf_slice;
         let best_sf_scale;
@@ -231,7 +242,7 @@ export function encode(data, config, err_cb) {
                         const predicted = chunk_enc.predict();
                         const quant = (j>>(k * config.residual_bits))&residual_mask;
                         const dequantized = table[quant];
-                        const reconstructed = qoa_clamp((predicted + dequantized)&0xffffffff, 65536*-128, 65536*127);
+                        const reconstructed = qpa_clamp((predicted + dequantized)&0xffffffff, 65536*-128, 65536*127);
                         chunk_error += chunk_enc.update(dequantized, reconstructed);
                         if (chunk_error > best_chunk_error) {
                             break;
@@ -280,24 +291,24 @@ export function encode(data, config, err_cb) {
         err_cb(Math.sqrt(error/num_samples));
     }
 
-    return stream.bytes();
+    return swap_ends(stream.bytes());
 }
 
 export function decode(bytes, config_override) {
-    const stream = new BitInputStream(bytes);
+    const stream = new BitInputStream(swap_ends(bytes));
     const magic = stream.read(32);
     const num_samples = stream.read(32);
     const samples = new Uint8Array(num_samples);
 
     const config = config_override ?? Object.values(QPA_CONFIGS).find((c) => c.magic === magic);
     if (!config) {
-        throw new Error('Could not find config for compression format');
+        throw new Error('Could not find matching QPA config');
     }
 
     const scalefactor_tab = config.scale_tab ?? make_scalefactor_tab(config.scale_bits, config.scale_exponent);
     const dequant_tab = expand_dequant_tab(config.dequant_tab, scalefactor_tab);
 
-    const enc = new Encoder(data, config.predict_shift, config.update_shift);
+    const enc = new Encoder(new Array(num_samples).fill(0), config.predict_shift, config.update_shift);
 
     for (
         let sample_index = 0;
@@ -316,8 +327,8 @@ export function decode(bytes, config_override) {
               const predicted = enc.predict();
               const quantized = stream.read(config.residual_bits);
               const dequantized = table[quantized];
-              const reconstructed = qoa_clamp((predicted + dequantized)&0xffffffff, 65536*-128, 65536*127);
-              chunk_enc.update(dequantized, reconstructed);
+              const reconstructed = qpa_clamp((predicted + dequantized)&0xffffffff, 65536*-128, 65536*127);
+              enc.update(dequantized, reconstructed);
               samples[idx++] = from_pico(reconstructed) + 128;
               bitsRemaining -= config.residual_bits;
           }
