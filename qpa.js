@@ -362,7 +362,7 @@ export function decode(bytes, config_override) {
     const stream = new BitInputStream(swap_ends(bytes));
     const magic = stream.read(32);
     const num_samples = stream.read(32);
-    const samples = new Uint8Array(num_samples);
+    const samples = new Float32Array(num_samples);
 
     const config =
         config_override ??
@@ -408,7 +408,7 @@ export function decode(bytes, config_override) {
                 65536 * 127
             );
             enc.update(dequantized, reconstructed);
-            samples[idx++] = from_pico(reconstructed) + 128;
+            samples[idx++] = from_pico(reconstructed) / 128;
             bitsRemaining -= config.residual_bits;
         }
         // skip stream if needed

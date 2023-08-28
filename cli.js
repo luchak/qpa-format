@@ -9,7 +9,7 @@ import waveResampler from 'wave-resampler';
 
 import { encode, decode, QPA_CONFIGS } from './qpa.js';
 
-const QPA_SR = 5512;
+const QPA_SR = 5512.5;
 const WAV_SR = 22050;
 
 const argv = minimist(process.argv.slice(2));
@@ -30,6 +30,21 @@ function arrayToMonoAudioBuffer(array, sampleRate) {
     return buffer;
 }
 
+function audioBufferToMonoArray(buffer) {
+    const array = new Array(buffer.getChannelData(0).length).fill(0);
+    for (let i = 0; i < buffer.numberOfChannels; i++) {
+        const channelData = buffer.getChannelData(i);
+        for (let j = 0; j < buffer.length; j++) {
+            array[j] += channelData[j];
+        }
+    }
+    const norm = 1.0 / buffer.numberOfChannels;
+    for (let i = 0; i < buffer.length; i++) {
+        array[i] *= norm;
+    }
+    return array;
+}
+
 async function run(input, output) {
     const inFormat = path.extname(input).toLowerCase();
     const outFormat = path.extname(output).toLowerCase();
@@ -44,31 +59,12 @@ async function run(input, output) {
     let inAudioBuffer, outFile;
 
     if (inFormat == '.qpa') {
-        const samples = decode(inFile);
-        const audio = arrayToMonoAudioBuffer(
-            new Float32Array(samples.length).fill(0),
-            QPA_SR
-        );
-        for (let i = 0; i < samples.length; i++) {
-            audio._channelData[0][i] = (samples[i] - 128) / 128;
-        }
-        inAudioBuffer = audio;
+        inAudioBuffer = arrayToMonoAudioBuffer(decode(inFile), QPA_SR);
     } else {
         inAudioBuffer = await decodeAudio(inFile);
     }
 
-    let inSamples = new Array(inAudioBuffer.getChannelData(0).length).fill(0);
-    for (let i = 0; i < inAudioBuffer.numberOfChannels; i++) {
-        const channelData = inAudioBuffer.getChannelData(i);
-        for (let j = 0; j < inSamples.length; j++) {
-            inSamples[j] += channelData[j];
-        }
-    }
-    const norm = 1.0 / inAudioBuffer.numberOfChannels;
-    for (let i = 0; i < inSamples.length; i++) {
-        inSamples[i] *= norm;
-    }
-
+    let inSamples = audioBufferToMonoArray(inAudioBuffer);
     if (outFormat == '.qpa') {
         if (inAudioBuffer.sampleRate !== QPA_SR) {
             inSamples = waveResampler.resample(
