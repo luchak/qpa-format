@@ -1,0 +1,29 @@
+{
+  "name": "qpa-format",
+  "version": "1.0.0",
+  "description": "Reference encoder for the QPA audio format",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/luchak/qpa-format.git"
+  },
+  "keywords": [
+    "PICO-8",
+    "audio",
+    "compression"
+  ],
+  "author": {
+    "email": "luchak@gmail.com"
+  },
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/luchak/qpa-format/issues"
+  },
+  "homepage": "https://github.com/luchak/qpa-format#readme",
+  "dependencies": {
+    "@thi.ng/bitstream": "^2.2.28"
+  }
+}
