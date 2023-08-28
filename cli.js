@@ -53,9 +53,7 @@ async function run(input, output) {
             QPA_SR
         );
         for (let i = 0; i < samples.length; i++) {
-            const sample = samples[i] - 128;
-            audio._channelData[0][i] = sample < 0 ? sample / 128 : sample / 127;
-            //audio.channelData[0][i] = (samples[i] - 128) / 127;
+            audio._channelData[0][i] = (samples[i] - 128) / 128;
         }
         inAudioBuffer = audio;
     } else {
