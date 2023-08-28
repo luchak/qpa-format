@@ -99,7 +99,8 @@ async function run(input, output) {
         );
     }
     if (outFile) {
-        console.log('Writing:', output);
         await fs.writeFile(output, outFile);
+    } else {
+        throw new Error('Failed to generate output file');
     }
 }
