@@ -7,9 +7,8 @@ import encodeWAV from 'audiobuffer-to-wav';
 import minimist from 'minimist';
 import waveResampler from 'wave-resampler';
 
-import { encode, decode, QPA_CONFIGS } from './qpa.js';
+import { encode, decode, QPA_CONFIGS, QPA_SR } from './qpa.js';
 
-const QPA_SR = 5512.5;
 const WAV_SR = 22050;
 
 const argv = minimist(process.argv.slice(2));
@@ -24,25 +23,27 @@ const output = argv._[1];
 const quality = argv.q ?? 2;
 run(input, output);
 
-function arrayToMonoAudioBuffer(array, sampleRate) {
-    const buffer = new AudioBuffer({ length: array.length, sampleRate });
-    buffer.copyToChannel(array, 0);
-    return buffer;
-}
-
-function audioBufferToMonoArray(buffer) {
-    const array = new Array(buffer.getChannelData(0).length).fill(0);
-    for (let i = 0; i < buffer.numberOfChannels; i++) {
-        const channelData = buffer.getChannelData(i);
-        for (let j = 0; j < buffer.length; j++) {
-            array[j] += channelData[j];
-        }
+function resampleAudioBuffer(inBuffer, outSR, options) {
+    const resampledChannels = [];
+    for (let i = 0; i < inBuffer.numberOfChannels; i++) {
+        resampledChannels.push(
+            waveResampler.resample(
+                inBuffer.getChannelData(i),
+                inBuffer.sampleRate,
+                outSR,
+                options
+            )
+        );
     }
-    const norm = 1.0 / buffer.numberOfChannels;
-    for (let i = 0; i < buffer.length; i++) {
-        array[i] *= norm;
+    const outBuffer = new AudioBuffer({
+        length: resampledChannels[0].length,
+        sampleRate: outSR,
+        numberOfChannels: inBuffer.numberOfChannels,
+    });
+    for (let i = 0; i < inBuffer.numberOfChannels; i++) {
+        outBuffer.copyToChannel(resampledChannels[i], i);
     }
-    return array;
+    return outBuffer;
 }
 
 async function run(input, output) {
@@ -59,35 +60,26 @@ async function run(input, output) {
     let inAudioBuffer, outFile;
 
     if (inFormat == '.qpa') {
-        inAudioBuffer = arrayToMonoAudioBuffer(decode(inFile), QPA_SR);
+        inAudioBuffer = decode(inFile);
     } else {
         inAudioBuffer = await decodeAudio(inFile);
     }
 
-    let inSamples = audioBufferToMonoArray(inAudioBuffer);
     if (outFormat == '.qpa') {
         if (inAudioBuffer.sampleRate !== QPA_SR) {
-            inSamples = waveResampler.resample(
-                inSamples,
-                inAudioBuffer.sampleRate,
-                QPA_SR,
-                { method: 'sinc' }
-            );
+            inAudioBuffer = resampleAudioBuffer(inAudioBuffer, QPA_SR, {
+                method: 'sinc',
+            });
         }
-        outFile = encode(inSamples, QPA_CONFIGS['qpa' + quality]);
+        outFile = encode(inAudioBuffer, QPA_CONFIGS['qpa' + quality]);
     } else {
         if (inAudioBuffer.sampleRate !== WAV_SR) {
             // Use point resampling for closest possible approximation to PICO-8 behavior
-            inSamples = waveResampler.resample(
-                inSamples,
-                inAudioBuffer.sampleRate,
-                WAV_SR,
-                { method: 'point' }
-            );
+            inAudioBuffer = resampleAudioBuffer(inAudioBuffer, WAV_SR, {
+                method: 'point',
+            });
         }
-        outFile = new Uint8Array(
-            encodeWAV(arrayToMonoAudioBuffer(inSamples, WAV_SR))
-        );
+        outFile = new Uint8Array(encodeWAV(inAudioBuffer));
     }
     if (outFile) {
         await fs.writeFile(output, outFile);

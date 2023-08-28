@@ -1,4 +1,7 @@
 import { BitInputStream, BitOutputStream } from '@thi.ng/bitstream';
+import AudioBuffer from 'audio-buffer';
+
+export const QPA_SR = 5512.5;
 
 const QPA1_CONFIG = {
     slice_len: 28,
@@ -144,6 +147,27 @@ function swap_ends(inbuf) {
     return outbuf;
 }
 
+function arrayToMonoAudioBuffer(array, sampleRate) {
+    const buffer = new AudioBuffer({ length: array.length, sampleRate });
+    buffer.copyToChannel(array, 0);
+    return buffer;
+}
+
+function audioBufferToMonoArray(buffer) {
+    const array = new Array(buffer.getChannelData(0).length).fill(0);
+    for (let i = 0; i < buffer.numberOfChannels; i++) {
+        const channelData = buffer.getChannelData(i);
+        for (let j = 0; j < buffer.length; j++) {
+            array[j] += channelData[j];
+        }
+    }
+    const norm = 1.0 / buffer.numberOfChannels;
+    for (let i = 0; i < buffer.length; i++) {
+        array[i] *= norm;
+    }
+    return array;
+}
+
 class Encoder {
     constructor(samples, predict_shift, update_shift) {
         this.weights = new Int32Array(4);
@@ -172,7 +196,7 @@ class Encoder {
     }
 
     update(residual, reconstructed) {
-        const sample = this.samples[this.idx] * 128;
+        const sample = this.samples[this.idx] * 127;
         const weights = this.weights;
         const history = this.history;
         const delta = residual >> this.update_shift;
@@ -188,7 +212,7 @@ class Encoder {
         const rms_sample = sample - 0.875 * this.signal_dc;
         this.rms += (rms_sample * rms_sample - this.rms) * (1 / 256);
         let error = from_pico(
-            to_pico(sample + 128) - ((reconstructed + 0x7f0000) & 0xff0000)
+            to_pico(sample + 128) - ((reconstructed + 0x800000) & 0xff0000)
         );
 
         this.error_dc = (this.error_dc + error) * 0.5;
@@ -233,15 +257,19 @@ class Encoder {
     }
 }
 
-export function encode(data, config, err_cb) {
+export function encode(audioBuffer, config, err_cb) {
     const scalefactor_tab =
         config.scale_tab ??
         make_scalefactor_tab(config.scale_bits, config.scale_exponent);
     const dequant_tab = expand_dequant_tab(config.dequant_tab, scalefactor_tab);
 
-    const num_samples = data.length;
+    const num_samples = audioBuffer.length;
     const num_slices = (num_samples + config.slice_len - 1) / config.slice_len;
-    const enc = new Encoder(data, config.predict_shift, config.update_shift);
+    const enc = new Encoder(
+        audioBufferToMonoArray(audioBuffer),
+        config.predict_shift,
+        config.update_shift
+    );
     const sf_enc = enc.copy();
     const best_sf_enc = enc.copy();
     const chunk_enc = enc.copy();
@@ -408,7 +436,9 @@ export function decode(bytes, config_override) {
                 65536 * 127
             );
             enc.update(dequantized, reconstructed);
-            samples[idx++] = from_pico(reconstructed) / 128;
+            samples[idx++] =
+                from_pico(((reconstructed + 0x800000) & 0xff0000) - 0x800000) /
+                128;
             bitsRemaining -= config.residual_bits;
         }
         // skip stream if needed
@@ -417,5 +447,5 @@ export function decode(bytes, config_override) {
         }
     }
 
-    return samples;
+    return arrayToMonoAudioBuffer(samples, QPA_SR);
 }
