@@ -30,15 +30,13 @@ qpa-format -q 3 input.wav output.qpa
 
 The command above will encode `input.wav` to `output.qpa` at quality level 3. QPA's quality levels are:
 
-1. 1.1 bits per sample, or 7:1 compression. Can store noisy but usually-intelligible speech, and can work very well for
-   some categories of instruments and sound effects.
-2. 2.3 bits per sample, or 3.5:1 compression. Stores reasonable-quality speech, and usable instrument samples. Can
-   still be moderately noisy.
-3. 3.2 bits per sample, or 2.5:1 compression. Good quality, usually still has some artifacts, but often better than 4
-   bit ADPCM.
-4. 3.6 bits per sample, or 2.25:1 compression. Minimal artifacts, sometimes perceptually transparent (or as much as
-   anything can be at 8 bits / 5.5 kHz). Usually better than 4 bit ADPCM.
-5. 4.6 bits per sample, or 1.75:1 compression. Usually perceptually transparent, at least to my ear.
+|level|ratio|bits / sample|bytes / second|description|
+|------|-----------------|---------------|----------------|-----------|
+|1|7:1|1.1|788|Noisy but mostly intelligible speech, can work well for some of instruments and sound effects.|
+|2|3.5:1|2.3|1585|Reasonable-quality speech, usable instrument samples. Still moderately noisy.|
+|3|2.5:1|3.2|2205|Good quality, usually has some artifacts, but often better than 4-bit ADPCM.|
+|4|2.25:1|3.6|2481|Few to no audible artifacts. Usually better than 4-bit ADPCM.|
+|5|1.75:1|4.6|3170|No easily discernable artifacts (at least to my ear), very little noise.|
 
 When encoding to QPA, the encoder will mix down multi-channel audio files to a single channel, and resample to 5512.5 Hz.
 
