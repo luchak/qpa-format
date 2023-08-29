@@ -1,4 +1,4 @@
-# QPA: Simple Lossy Compressed Audio for PICO-8
+# QPA: Lossy Audio Compression for PICO-8
 
 Questionable PICO-8 Audio (QPA) is an adaptation of the [Quite OK Audio Format (QOA)](https://qoaformat.org/) for the
 [PICO-8](https://www.lexaloffle.com/pico-8.php) platform. Its benefits include:
