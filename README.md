@@ -16,7 +16,8 @@ I will attempt to avoid breaking changes to this format going forward, but I can
 
 ## Encoder Usage
 
-You can encode audio files like so:
+You will need Node and NPM installed to use the decoder, and you'll need to run `npm i` to install dependencies. Then you
+can encode audio files like so:
 
 ```
 node src/cli.js -q 3 input.wav output.qpa
