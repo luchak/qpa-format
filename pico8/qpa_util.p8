@@ -37,7 +37,7 @@ function _update()
      #samples-pos,256
     )
     for i=0,n-1 do
-     poke(0x4300+i,samples[pos+i])
+     poke(0x4300+i,samples[pos+i+1])
     end
     serial(0x808,0x4300,n)
     pos+=n
