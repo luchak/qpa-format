@@ -14,7 +14,7 @@ ears.
 
 I will attempt to avoid breaking changes to this format going forward, but I cannot promise anything on that front.
 
-## Usage
+## Encoder Usage
 
 You can encode audio files like so:
 
@@ -53,3 +53,15 @@ The `pico8/` directory contains a utility cart that provides:
   PICO-8 memory, and decoding QPA from strings.
 - Loading and previewing of QPA files to verify proper encoding.
 - Conversion of QPA files to binary data strings you can paste into your carts.
+
+## Using QPA in Your Project
+
+The simplest way to do use QPA compression in your project is probably:
+
+1. Use this CLI or (soon) @bikibird's [Defy](https://bikibird.github.io/defy) tool to convert your audio file to QPA.
+   The decoding functions in this repo have a limit of ~32k samples, so try to stick to audio files of 6 seconds or
+   less.
+2. Load the utility cart at `pico8/qpa_util.p8`. Drop your encoded file on it and press X to verify proper playback.
+3. Copy the string that the utility cart has already sent to the clipboard. Paste this string into your cart.
+4. Copy the `qpa_decode_string()` function from this repo into your cart. Use it to decode your audio. You will need to
+   handle PCM audio output on your own, but the demo cart contains a simple example.
