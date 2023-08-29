@@ -1,6 +1,6 @@
 {
     "name": "qpa-format",
-    "version": "1.0.0",
+    "version": "0.1.0",
     "description": "Reference encoder for the QPA audio format",
     "main": "index.js",
     "bin": "src/cli.js",
