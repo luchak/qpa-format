@@ -1,3 +1,5 @@
+#!/usr/bin/env node
+
 import fs from 'node:fs/promises';
 import path from 'node:path';
 
@@ -13,15 +15,16 @@ const WAV_SR = 22050;
 
 const argv = minimist(process.argv.slice(2));
 
-if (argv._.length != 2)
-    throw new Error(
-        'usage:\n  node qpa_cli.js [-q <quality>] input.{qpa,wav,mp3,...} output.{qpa,wav}'
+if (argv._.length != 2) {
+    console.error(
+        'Usage:  qpa-format [-q <quality>] input.{qpa,wav,mp3,...} output.{qpa,wav}'
     );
-
-const input = argv._[0];
-const output = argv._[1];
-const quality = argv.q ?? 2;
-run(input, output);
+} else {
+    const input = argv._[0];
+    const output = argv._[1];
+    const quality = argv.q ?? 2;
+    run(input, output, quality);
+}
 
 function resampleAudioBuffer(inBuffer, outSR, options) {
     const resampledChannels = [];
@@ -46,7 +49,7 @@ function resampleAudioBuffer(inBuffer, outSR, options) {
     return outBuffer;
 }
 
-async function run(input, output) {
+async function run(input, output, quality) {
     const inFormat = path.extname(input).toLowerCase();
     const outFormat = path.extname(output).toLowerCase();
 
