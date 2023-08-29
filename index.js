@@ -1,1 +1,1 @@
-export * from './qpa.js';
+export * from './src/qpa.js';
