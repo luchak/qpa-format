@@ -209,14 +209,14 @@ class Encoder {
         history[2] = history[3];
         history[3] = reconstructed >> this.predict_shift;
         this.signal_dc = (this.signal_dc + sample) * 0.5;
-        const rms_sample = sample - 0.875 * this.signal_dc;
+        const rms_sample = sample - 0.95 * this.signal_dc;
         this.rms += (rms_sample * rms_sample - this.rms) * (1 / 256);
         let error = from_pico(
             to_pico(sample + 128) - ((reconstructed + 0x800000) & 0xff0000)
         );
 
         this.error_dc = (this.error_dc + error) * 0.5;
-        error -= 0.875 * this.error_dc;
+        error -= 0.95 * this.error_dc;
 
         this.idx += 1;
 
