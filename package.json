@@ -1,5 +1,5 @@
 {
-    "name": "qpa-format",
+    "name": "@luchak/qpa-format",
     "version": "0.1.0",
     "description": "Reference encoder for the QPA audio format",
     "main": "index.js",
