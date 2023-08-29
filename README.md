@@ -7,6 +7,9 @@ Questionable PICO-8 Audio (QPA) is an adaptation of the [Quite OK Audio Format (
 - Reasonable quality at very low data rates. QPA encodes mostly-intelligible speech at just 1.14 bits/sample (788 bytes/second) - or completely-intelligible speech, as well as usable instrument samples, at twice that rate.
 - Faster-than-realtime decoding speed. Precise speed depends on the decoder implementation, but around 4x realtime is a reasonable expectation for a token-optimized (not CPU-optimized) decoder.
 
+This file contains usage information and links to resources. For more detail on the definition of the format, please
+see SPEC.md.
+
 ## ⚠️ Warning
 
 As always with audio code, be careful when experimenting. Bugs or bad data can produce loud sounds that can damage your
@@ -57,7 +60,7 @@ The `pico8/` directory contains a utility cart that provides:
 
 The simplest way to do use QPA compression in your project is probably:
 
-1. Use this CLI or (soon) @bikibird's [Defy](https://bikibird.github.io/defy) tool to convert your audio file to QPA.
+1. Use this CLI or bikibird's [Defy](https://bikibird.itch.io/defy) tool to convert your audio file to QPA.
    The decoding functions in this repo have a limit of ~32k samples, so try to stick to audio files of 6 seconds or
    less.
 2. Load the utility cart at `pico8/qpa_util.p8`. Drop your encoded file on it and press X to verify proper playback.
