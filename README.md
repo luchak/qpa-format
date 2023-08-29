@@ -14,17 +14,15 @@ ears.
 
 I will attempt to avoid breaking changes to this format going forward, but I cannot promise anything on that front.
 
-## Installation
-
-To install the `qpa-format` CLI globally on your system:
-
-```
-npm i -g .
-```
-
-## Encoder Usage
+## Usage
 
 You can encode audio files like so:
+
+```
+node src/cli.js -q 3 input.wav output.qpa
+```
+
+Or, if you run `npm i -g .` to install globally:
 
 ```
 qpa-format -q 3 input.wav output.qpa
