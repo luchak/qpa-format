@@ -242,8 +242,8 @@ function qpa_decode_string(s)
   get_word(),
   0x.7fe3
  )<<16
- local h=split"0,0,0,0"
- local w=split"0,0,-32,64"
+ local hist=split"0,0,0,0"
+ local weights=split"0,0,-32,64"
 
  local data={}
  while n_left>0 do
@@ -291,7 +291,6 @@ function escape_binary_str(s)
  end
  return out
 end
-
 
 __gfx__
 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
