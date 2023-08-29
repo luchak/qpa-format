@@ -10,8 +10,8 @@ const QPA1_CONFIG = {
     residual_bits: 1,
     dequant_tab: [0.125, -0.125],
     chunk_size: 7,
-    update_shift: 3,
-    predict_shift: 7,
+    update_shift: 4,
+    predict_shift: 8,
     magic: 0x31617071 /* 'qpa1' */,
 };
 
@@ -22,8 +22,8 @@ const QPA2_CONFIG = {
     residual_bits: 2,
     dequant_tab: [0x10 / 256, -0x10 / 256, 0x40 / 256, -0x40 / 256],
     chunk_size: 4,
-    update_shift: 3,
-    predict_shift: 7,
+    update_shift: 4,
+    predict_shift: 8,
     magic: 0x32617071 /* 'qpa2' */,
 };
 
@@ -43,8 +43,8 @@ const QPA3_CONFIG = {
         -0x400 / 256,
     ],
     chunk_size: 3,
-    update_shift: 3,
-    predict_shift: 7,
+    update_shift: 4,
+    predict_shift: 8,
     magic: 0x33617071 /* 'qpa3' */,
 };
 
@@ -64,8 +64,8 @@ const QPA4_CONFIG = {
         -0x18 / 256,
     ],
     chunk_size: 3,
-    update_shift: 3,
-    predict_shift: 7,
+    update_shift: 4,
+    predict_shift: 8,
     magic: 0x34617071 /* 'qpa4' */,
 };
 
@@ -93,8 +93,8 @@ const QPA5_CONFIG = {
         -0.5,
     ],
     chunk_size: 2,
-    update_shift: 3,
-    predict_shift: 7,
+    update_shift: 4,
+    predict_shift: 8,
     magic: 0x35617071 /* 'qpa5' */,
 };
 
