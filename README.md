@@ -65,3 +65,8 @@ The simplest way to do use QPA compression in your project is probably:
 4. Copy the `qpa_decode_string()` function and the `qpa_cfg` table from the utility cart into your cart. Use it to
    decode your audio. You will need to handle PCM audio output on your own, but the demo cart contains a simple
    example.
+
+## Credits
+
+- @phoboslab: [The Quite OK Audio Format](https://qoaformat.org)
+- @mattdesl: [qoa-format](https://github.com/mattdesl/qoa-format)
