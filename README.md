@@ -3,7 +3,7 @@
 Questionable PICO-8 Audio (QPA) is an adaptation of the [Quite OK Audio Format (QOA)](https://qoaformat.org/) for the
 [PICO-8](https://www.lexaloffle.com/pico-8.php) platform. Its benefits include:
 
-- Tiny decoder. A fully-featured decoder with quality-level detection is just 2XX tokens. A minimal decoder is just 1XX tokens.
+- Tiny decoder. A fully-featured decoder with quality-level detection is just 228 tokens. A minimal decoder is just 175 tokens.
 - Reasonable quality at very low data rates. QPA encodes mostly-intelligible speech at just 1.14 bits/sample (788 bytes/second) - or completely-intelligible speech, as well as usable instrument samples, at twice that rate.
 - Faster-than-realtime decoding speed. Precise speed depends on the decoder implementation, but around 4x realtime is a reasonable expectation for a token-optimized (not CPU-optimized) decoder.
 
