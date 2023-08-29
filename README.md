@@ -30,13 +30,13 @@ qpa-format -q 3 input.wav output.qpa
 
 The command above will encode `input.wav` to `output.qpa` at quality level 3. QPA's quality levels are:
 
-|level|ratio|bits / sample|bytes / second|description|
-|------|-----------------|---------------|----------------|-----------|
-|1|7:1|1.1|788|Noisy but mostly intelligible speech, can work well for some of instruments and sound effects.|
-|2|3.5:1|2.3|1585|Reasonable-quality speech, usable instrument samples. Still moderately noisy.|
-|3|2.5:1|3.2|2205|Good quality, usually has some artifacts, but often better than 4-bit ADPCM.|
-|4|2.25:1|3.6|2481|Few to no audible artifacts. Usually better than 4-bit ADPCM.|
-|5|1.75:1|4.6|3170|No easily discernable artifacts (at least to my ear), very little noise.|
+| level | ratio  | bits / sample | bytes / second | description                                                                                    |
+| ----- | ------ | ------------- | -------------- | ---------------------------------------------------------------------------------------------- |
+| 1     | 7:1    | 1.1           | 788            | Noisy but mostly intelligible speech, can work well for some of instruments and sound effects. |
+| 2     | 3.5:1  | 2.3           | 1585           | Reasonable-quality speech, usable instrument samples. Still moderately noisy.                  |
+| 3     | 2.5:1  | 3.2           | 2205           | Good quality, usually has some artifacts, but often better than 4-bit ADPCM.                   |
+| 4     | 2.25:1 | 3.6           | 2481           | Few to no audible artifacts. Usually better than 4-bit ADPCM.                                  |
+| 5     | 1.75:1 | 4.6           | 3170           | No easily discernable artifacts (at least to my ear), very little noise.                       |
 
 When encoding to QPA, the encoder will mix down multi-channel audio files to a single channel, and resample to 5512.5 Hz.
 
@@ -61,5 +61,6 @@ The simplest way to do use QPA compression in your project is probably:
    less.
 2. Load the utility cart at `pico8/qpa_util.p8`. Drop your encoded file on it and press X to verify proper playback.
 3. Copy the string that the utility cart has already sent to the clipboard. Paste this string into your cart.
-4. Copy the `qpa_decode_string()` function from this repo into your cart. Use it to decode your audio. You will need to
-   handle PCM audio output on your own, but the demo cart contains a simple example.
+4. Copy the `qpa_decode_string()` function and the `qpa_cfg` table from the utility cart into your cart. Use it to
+   decode your audio. You will need to handle PCM audio output on your own, but the demo cart contains a simple
+   example.
