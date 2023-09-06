@@ -183,22 +183,25 @@ class Encoder {
         this.weights[3] = to_pico(64);
         this.accuracy_error = 0;
         this.stability_error = 0;
+        this._predict();
     }
 
-    predict() {
+    _predict() {
         const weights = this.weights;
         const history = this.history;
-        return (
+        this.prediction =
             (pico_mul(weights[0], history[0]) +
                 pico_mul(weights[1], history[1]) +
                 pico_mul(weights[2], history[2]) +
                 pico_mul(weights[3], history[3])) &
-            0xffffffff
-        );
+            0xffffffff;
+    }
+
+    predict() {
+        return this.prediction;
     }
 
     update(residual, reconstructed) {
-        const last_prediction = this.predict();
         const sample = this.samples[this.idx] * 128;
         const weights = this.weights;
         const history = this.history;
@@ -211,6 +214,8 @@ class Encoder {
         history[1] = history[2];
         history[2] = history[3];
         history[3] = reconstructed >> this.predict_shift;
+        this._predict();
+
         this.signal_dc = (this.signal_dc + sample) * 0.5;
         const rms_sample = sample - 0.95 * this.signal_dc;
         this.rms += (rms_sample * rms_sample - this.rms) * (1 / 256);
@@ -255,6 +260,7 @@ class Encoder {
         this.rms = other.rms;
         this.accuracy_error = other.accuracy_error;
         this.stability_error = other.stability_error;
+        this.prediction = other.prediction;
     }
 
     copy() {
