@@ -1,5 +1,9 @@
 # QPA: Lossy Audio Compression for PICO-8
 
+⚠️ **NOTE**: on 2023-09-06, QPA was updated in a way that broke encoder/decoder compatibility, so you may have to
+re-encode files if you want to update your decoder code. I'll try not to break compatibility again. The breaking
+changes should greatly increase encoder stability/safety and somewhat increase quality.
+
 Questionable PICO-8 Audio (QPA) is an adaptation of the [Quite OK Audio Format (QOA)](https://qoaformat.org/) for the
 [PICO-8](https://www.lexaloffle.com/pico-8.php) platform. Its benefits include:
 
