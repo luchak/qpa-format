@@ -77,14 +77,14 @@ sample = mid(-128, sample, 127)
 The decoder finally updates the weights and the history, applying several right shifts to maintain system stability. The same shift is applied for all quality levels, and shift amounts were determined empirically in order to maintain stability even for extreme inputs.
 
 ```lua
-delta = dequantized >> 4
+delta = dequantized >> 3
 for i=1,4 do
 	weights[i] = weights[i] + sgn(history[i]) * delta
 end
 for i=1,3 do
     history[i] = history[i+1]
 end
-history[3] = sample >> 8
+history[3] = sample >> 7
 ```
 
 Finally, the decoder shifts the output sample from s8 to u8. It may also choose to round the sample at this point. Note that the sample _must not_ be rounded before it is appended to the history.
