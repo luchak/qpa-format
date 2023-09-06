@@ -10,8 +10,8 @@ const QPA1_CONFIG = {
     residual_bits: 1,
     dequant_tab: [0.125, -0.125],
     chunk_size: 7,
-    update_shift: 4,
-    predict_shift: 8,
+    update_shift: 3,
+    predict_shift: 7,
     magic: 0x31617071 /* 'qpa1' */,
 };
 
@@ -22,8 +22,8 @@ const QPA2_CONFIG = {
     residual_bits: 2,
     dequant_tab: [0x10 / 256, -0x10 / 256, 0x40 / 256, -0x40 / 256],
     chunk_size: 4,
-    update_shift: 4,
-    predict_shift: 8,
+    update_shift: 3,
+    predict_shift: 7,
     magic: 0x32617071 /* 'qpa2' */,
 };
 
@@ -43,8 +43,8 @@ const QPA3_CONFIG = {
         -0x400 / 256,
     ],
     chunk_size: 3,
-    update_shift: 4,
-    predict_shift: 8,
+    update_shift: 3,
+    predict_shift: 7,
     magic: 0x33617071 /* 'qpa3' */,
 };
 
@@ -64,8 +64,8 @@ const QPA4_CONFIG = {
         -0x18 / 256,
     ],
     chunk_size: 3,
-    update_shift: 4,
-    predict_shift: 8,
+    update_shift: 3,
+    predict_shift: 7,
     magic: 0x34617071 /* 'qpa4' */,
 };
 
@@ -93,8 +93,8 @@ const QPA5_CONFIG = {
         -0.5,
     ],
     chunk_size: 2,
-    update_shift: 4,
-    predict_shift: 8,
+    update_shift: 3,
+    predict_shift: 7,
     magic: 0x35617071 /* 'qpa5' */,
 };
 
@@ -181,6 +181,8 @@ class Encoder {
         this.rms = 0;
         this.weights[2] = to_pico(-32);
         this.weights[3] = to_pico(64);
+        this.accuracy_error = 0;
+        this.stability_error = 0;
     }
 
     predict() {
@@ -196,6 +198,7 @@ class Encoder {
     }
 
     update(residual, reconstructed) {
+        const last_prediction = this.predict();
         const sample = this.samples[this.idx] * 128;
         const weights = this.weights;
         const history = this.history;
@@ -221,14 +224,16 @@ class Encoder {
         this.idx += 1;
 
         const next_prediction = this.predict();
-        return (
-            (error * error) / (16 + this.rms) +
-            Math.max(
-                0,
-                to_pico(-128) - next_prediction,
-                next_prediction - to_pico(127)
-            )
+        const accuracy_error = (error * error) / (16 + this.rms);
+        let stability_error = Math.max(
+            0,
+            to_pico(-128) - next_prediction,
+            next_prediction - to_pico(127)
         );
+        stability_error *= 1e-8;
+        this.accuracy_error += accuracy_error;
+        this.stability_error += stability_error;
+        return accuracy_error + stability_error;
     }
 
     clone_from(other) {
@@ -248,6 +253,8 @@ class Encoder {
         this.signal_dc = other.signal_dc;
         this.idx = other.idx;
         this.rms = other.rms;
+        this.accuracy_error = other.accuracy_error;
+        this.stability_error = other.stability_error;
     }
 
     copy() {
@@ -265,7 +272,7 @@ class Encoder {
     }
 }
 
-export function encode(audioBuffer, config, err_cb) {
+export function encode(audioBuffer, config, effort, err_cb) {
     const scalefactor_tab =
         config.scale_tab ??
         make_scalefactor_tab(config.scale_bits, config.scale_exponent);
@@ -290,7 +297,6 @@ export function encode(audioBuffer, config, err_cb) {
     const stream = new BitOutputStream(encoded_size);
     stream.write(config.magic, 32);
     stream.write(num_samples, 32);
-    let error = 0;
 
     for (
         let sample_index = 0;
@@ -316,10 +322,11 @@ export function encode(audioBuffer, config, err_cb) {
             let sf_error = 0;
 
             const slice = [];
-            for (let i = 0; i < slice_len; i += config.chunk_size) {
+            const target_chunk_size = effort > 0 ? config.chunk_size : 1;
+            for (let i = 0; i < slice_len; i += target_chunk_size) {
                 let best_chunk_error = Infinity;
                 let best_chunk_quant;
-                const chunk_size = Math.min(config.chunk_size, slice_len - i);
+                const chunk_size = Math.min(target_chunk_size, slice_len - i);
                 const residual_mask = (1 << config.residual_bits) - 1;
                 for (
                     let j = 0;
@@ -385,10 +392,12 @@ export function encode(audioBuffer, config, err_cb) {
             const v = i < best_sf_slice.length ? best_sf_slice[i] : 0;
             stream.write(v, config.residual_bits);
         }
-        error += best_sf_error;
     }
     if (err_cb) {
-        err_cb(Math.sqrt(error / num_samples));
+        err_cb([
+            Math.sqrt(enc.accuracy_error / num_samples),
+            enc.stability_error / num_samples,
+        ]);
     }
 
     return swap_ends(stream.bytes());

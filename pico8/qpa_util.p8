@@ -199,14 +199,14 @@ function qpa_decode_memory(
      $ptr>>shift&(1<<b_resid)-1
     )
    ]*sf
-   local d=pred>>4
+   local d=pred>>3
    for j=1,4 do
     pred+=weights[j]*hist[j]
     weights[j]+=d*sgn(hist[j])
    end
    pred=mid(-128,pred,127)
    deli(hist,1)
-   add(hist,pred>>8)
+   add(hist,pred>>7)
    add(data,pred+128)
    n_left-=1
   end

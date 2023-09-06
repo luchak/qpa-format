@@ -13,17 +13,27 @@ import { encode, decode, QPA_CONFIGS, QPA_SR } from './qpa.js';
 
 const WAV_SR = 22050;
 
-const argv = minimist(process.argv.slice(2));
+const argv = minimist(process.argv.slice(2), {
+    number: ['quality', 'effort'],
+    boolean: ['verbose'],
+    alias: { q: 'quality', v: 'verbose', e: 'effort' },
+});
 
 if (argv._.length != 2) {
     console.error(
-        'Usage:  qpa-format [-q <quality>] input.{qpa,wav,mp3,...} output.{qpa,wav}'
+        `Usage:  qpa-format [options] input.{qpa,wav,mp3,...} output.{qpa,wav}
+    options:
+        -q, --quality <q>       Set the quality level to <q>. Allowed values are 1-5, default is 2.
+        -v, --verbose           Enable verbose mode.
+        -e, --effort <n>        Sets encoder effort level. Allowed values are 0-1, default is 1.`
     );
 } else {
     const input = argv._[0];
     const output = argv._[1];
     const quality = argv.q ?? 2;
-    run(input, output, quality);
+    const verbosity = argv.v ? 1 : 0;
+    const effort = argv.e ?? 1;
+    run(input, output, quality, effort, verbosity);
 }
 
 function resampleAudioBuffer(inBuffer, outSR, options) {
@@ -49,7 +59,7 @@ function resampleAudioBuffer(inBuffer, outSR, options) {
     return outBuffer;
 }
 
-async function run(input, output, quality) {
+async function run(input, output, quality, effort, verbosity) {
     const inFormat = path.extname(input).toLowerCase();
     const outFormat = path.extname(output).toLowerCase();
 
@@ -74,7 +84,12 @@ async function run(input, output, quality) {
                 method: 'sinc',
             });
         }
-        outFile = encode(inAudioBuffer, QPA_CONFIGS['qpa' + quality]);
+        outFile = encode(
+            inAudioBuffer,
+            QPA_CONFIGS['qpa' + quality],
+            effort,
+            verbosity > 0 ? (err) => console.log('err:', err) : () => undefined
+        );
     } else {
         if (inAudioBuffer.sampleRate !== WAV_SR) {
             // Use point resampling for closest possible approximation to PICO-8 behavior
