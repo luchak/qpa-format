@@ -220,7 +220,15 @@ class Encoder {
 
         this.idx += 1;
 
-        return (error * error) / (16 + this.rms);
+        const next_prediction = this.predict();
+        return (
+            (error * error) / (16 + this.rms) +
+            Math.max(
+                0,
+                to_pico(-128) - next_prediction,
+                next_prediction - to_pico(127)
+            )
+        );
     }
 
     clone_from(other) {
