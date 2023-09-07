@@ -3,6 +3,8 @@ import AudioBuffer from 'audio-buffer';
 
 export const QPA_SR = 5512.5;
 
+const HISTORY_LEN = 4;
+
 const QPA1_CONFIG = {
     slice_len: 28,
     scale_bits: 4,
@@ -170,8 +172,8 @@ function audioBufferToMonoArray(buffer) {
 
 class Encoder {
     constructor(samples, predict_shift, update_shift) {
-        this.weights = new Int32Array(4);
-        this.history = new Int32Array(4);
+        this.weights = new Int32Array(HISTORY_LEN);
+        this.history = new Int32Array(HISTORY_LEN);
         this.error_dc = 0;
         this.signal_dc = 0;
         this.idx = 0;
@@ -179,8 +181,8 @@ class Encoder {
         this.predict_shift = predict_shift;
         this.update_shift = update_shift;
         this.rms = 0;
-        this.weights[2] = to_pico(-32);
-        this.weights[3] = to_pico(64);
+        this.weights[HISTORY_LEN - 2] = to_pico(-32);
+        this.weights[HISTORY_LEN - 1] = to_pico(64);
         this.accuracy_error = 0;
         this.stability_error = 0;
         this._predict();
@@ -189,12 +191,11 @@ class Encoder {
     _predict() {
         const weights = this.weights;
         const history = this.history;
-        this.prediction =
-            (pico_mul(weights[0], history[0]) +
-                pico_mul(weights[1], history[1]) +
-                pico_mul(weights[2], history[2]) +
-                pico_mul(weights[3], history[3])) &
-            0xffffffff;
+        let prediction = 0;
+        for (let i = 0; i < HISTORY_LEN; i++) {
+            prediction += pico_mul(weights[i], history[i]);
+        }
+        this.prediction = prediction & 0xffffffff;
     }
 
     predict() {
@@ -206,14 +207,11 @@ class Encoder {
         const weights = this.weights;
         const history = this.history;
         const delta = residual >> this.update_shift;
-        weights[0] += history[0] < 0 ? -delta : delta;
-        weights[1] += history[1] < 0 ? -delta : delta;
-        weights[2] += history[2] < 0 ? -delta : delta;
-        weights[3] += history[3] < 0 ? -delta : delta;
-        history[0] = history[1];
-        history[1] = history[2];
-        history[2] = history[3];
-        history[3] = reconstructed >> this.predict_shift;
+        for (let i = 0; i < HISTORY_LEN; i++) {
+            weights[i] += history[i] < 0 ? -delta : delta;
+            history[i] = history[i + 1];
+        }
+        history[HISTORY_LEN - 1] = reconstructed >> this.predict_shift;
         this._predict();
 
         this.signal_dc = (this.signal_dc + sample) * 0.5;
@@ -246,14 +244,10 @@ class Encoder {
         const this_history = this.history;
         const other_weights = other.weights;
         const other_history = other.history;
-        this_weights[0] = other_weights[0];
-        this_weights[1] = other_weights[1];
-        this_weights[2] = other_weights[2];
-        this_weights[3] = other_weights[3];
-        this_history[0] = other_history[0];
-        this_history[1] = other_history[1];
-        this_history[2] = other_history[2];
-        this_history[3] = other_history[3];
+        for (let i = 0; i < HISTORY_LEN; i++) {
+            this_weights[i] = other_weights[i];
+            this_history[i] = other_history[i];
+        }
         this.error_dc = other.error_dc;
         this.signal_dc = other.signal_dc;
         this.idx = other.idx;
