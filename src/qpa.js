@@ -458,7 +458,6 @@ export function decode(bytes, config_override) {
         const slice_count = slice_end - slice_start;
         let idx = slice_start;
         let bitsRemaining = config.slice_len * config.residual_bits;
-        // note: this loop is a hot code path and could be optimized
         for (let i = 0; i < slice_count; i++) {
             const predicted = enc.predict();
             const quantized = stream.read(config.residual_bits);
