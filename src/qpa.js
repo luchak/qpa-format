@@ -272,6 +272,46 @@ class Encoder {
     }
 }
 
+function search_chunks(
+    init_enc,
+    work_enc,
+    best_enc,
+    config,
+    table,
+    chunk_size
+) {
+    const residual_mask = (1 << config.residual_bits) - 1;
+    let best_chunk_error = Infinity;
+    let best_chunk_quant;
+    for (let j = 0; j < 1 << (config.residual_bits * chunk_size); j++) {
+        work_enc.clone_from(init_enc);
+        let chunk_error = 0;
+        for (let k = 0; k < chunk_size; k++) {
+            const predicted = work_enc.predict();
+            const quant = (j >> (k * config.residual_bits)) & residual_mask;
+            const dequantized = table[quant];
+            const reconstructed = qpa_clamp(
+                (predicted + dequantized) & 0xffffffff,
+                65536 * -128,
+                65536 * 127
+            );
+            chunk_error += work_enc.update(dequantized, reconstructed);
+            if (chunk_error > best_chunk_error) {
+                break;
+            }
+        }
+        if (chunk_error < best_chunk_error) {
+            best_chunk_quant = j;
+            best_chunk_error = chunk_error;
+            best_enc.clone_from(work_enc);
+        }
+    }
+    if (best_chunk_error == Infinity) {
+        throw new Error('no best value found');
+    }
+    return [best_chunk_quant, best_chunk_error];
+}
+
 export function encode(audioBuffer, config, effort, err_cb) {
     const scalefactor_tab =
         config.scale_tab ??
@@ -292,6 +332,8 @@ export function encode(audioBuffer, config, effort, err_cb) {
 
     const encoded_size =
         8 /* 8 byte file header */ + num_slices * 4; /* 4 byte slices */
+
+    const residual_mask = (1 << config.residual_bits) - 1;
 
     // write header
     const stream = new BitOutputStream(encoded_size);
@@ -324,41 +366,15 @@ export function encode(audioBuffer, config, effort, err_cb) {
             const slice = [];
             const target_chunk_size = effort > 0 ? config.chunk_size : 1;
             for (let i = 0; i < slice_len; i += target_chunk_size) {
-                let best_chunk_error = Infinity;
-                let best_chunk_quant;
                 const chunk_size = Math.min(target_chunk_size, slice_len - i);
-                const residual_mask = (1 << config.residual_bits) - 1;
-                for (
-                    let j = 0;
-                    j < 1 << (config.residual_bits * chunk_size);
-                    j++
-                ) {
-                    chunk_enc.clone_from(sf_enc);
-                    let chunk_error = 0;
-                    for (let k = 0; k < chunk_size; k++) {
-                        const predicted = chunk_enc.predict();
-                        const quant =
-                            (j >> (k * config.residual_bits)) & residual_mask;
-                        const dequantized = table[quant];
-                        const reconstructed = qpa_clamp(
-                            (predicted + dequantized) & 0xffffffff,
-                            65536 * -128,
-                            65536 * 127
-                        );
-                        chunk_error += chunk_enc.update(
-                            dequantized,
-                            reconstructed
-                        );
-                        if (chunk_error > best_chunk_error) {
-                            break;
-                        }
-                    }
-                    if (chunk_error < best_chunk_error) {
-                        best_chunk_quant = j;
-                        best_chunk_error = chunk_error;
-                        best_chunk_enc.clone_from(chunk_enc);
-                    }
-                }
+                const [best_chunk_quant, best_chunk_error] = search_chunks(
+                    sf_enc,
+                    chunk_enc,
+                    best_chunk_enc,
+                    config,
+                    table,
+                    chunk_size
+                );
                 if (best_chunk_error == Infinity) {
                     throw new Error('no best value found');
                 }
